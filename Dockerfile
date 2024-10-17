@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies in a temporary location
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install --prefix=/install -r requirements.txt
 
 # Stage 2: Runtime stage
@@ -21,6 +21,9 @@ FROM python:3.9-slim
 
 # Set the working directory in the container
 WORKDIR /app
+
+# Install curl in the runtime stage
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Copy only the necessary files from the build stage (dependencies)
 COPY --from=builder /install /usr/local
@@ -36,6 +39,5 @@ ENV FLASK_ENV=production
 EXPOSE 5000
 
 # Command to run the Flask application
-#CMD ["flask", "run", "--host=0.0.0.0"]
-CMD ["python", "app.py"]
-
+#CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:5000", "app:app"]
